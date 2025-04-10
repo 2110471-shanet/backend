@@ -3,10 +3,13 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import connect from './config/mongodb.js';
-import authenticationRoute from './router/authenticationRoute.js';
-import apiRoute from './router/apiRoute.js';
+import authenticationRoute from './router/authentication.routes.js';
+import apiRoute from './router/api.routes.js';
 import http from 'http';
 import socketHandler from './socket.js';
+import authMiddleware from './authMiddleware.js';
+import chatroomsRoute from './router/chatrooms.routes.js';
+import chatsRoute from './router/chats.routes.js'
 
 const createApp = () => {
   const app = express();
@@ -22,7 +25,9 @@ const createApp = () => {
   app.use(cookieParser());
 
   app.use('/auth', authenticationRoute);
-  app.use('/api', apiRoute);
+  app.use('/api', authMiddleware, apiRoute);
+  app.use('/api/chatrooms', authMiddleware, chatroomsRoute);
+  app.use('/api/chats', authMiddleware, chatsRoute);
 
 
   return app;

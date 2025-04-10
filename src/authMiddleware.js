@@ -17,7 +17,7 @@ const authMiddleware = async (req, res, next) => {
         const decoded = jwt.verify(token, JWT_SECRET);
 
         // Check if the user exists in the database
-        const user = await User.findById(decoded.id).select('id username chatToken');
+        const user = await User.findById(decoded.id).select('id username');
 
         if (!user) {
             return res.status(401).json({ message: 'Unauthorized: User does not exist' });
