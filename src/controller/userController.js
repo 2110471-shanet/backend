@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../model/user.js';
-import Chat from '../model/chat.js';
+import Chat from '../model/message.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

@@ -1,5 +1,5 @@
 import User from '../model/user.js';   
-import Chat from '../model/chat.js';
+import Chat from '../model/message.js';
 import mongoose from 'mongoose';
 
 const socketController = (socket, io) => {
