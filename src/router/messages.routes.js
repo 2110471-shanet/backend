@@ -1,7 +1,9 @@
 import express from "express";
+import {createMessage, updateMessage, deleteMessage} from "../controller/messageController.js"
 const router = express.Router()
 
-// router.put('/chats/:id',)
-// router.delete('/chats/:id',)
+router.post('/', createMessage)
+router.put('/:id', updateMessage)
+router.delete('/:id', deleteMessage)
 
 export default router;
