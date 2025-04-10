@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
         required: true,
         type: String,
     },
-    chats: [{
+    chatrooms: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Chat',
     }],

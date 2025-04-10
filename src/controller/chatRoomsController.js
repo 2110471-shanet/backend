@@ -1,23 +1,26 @@
 import User from "../model/user.js";
 import ChatRoom from "../model/chatroom.js";
+import Message from "../model/chat.js";
 
 const getChatRooms = async (req, res) => {
     try {
         const userId = req.user.id;
 
         // 1. Get the user and their chatroom IDs
-        const user = await User.findById(userId).select('chats');
+        const user = await User.findById(userId).select('chatrooms');
+
+        console.log(user)
 
         if (!user) {
             return res.status(404).json({ error: 'User not found.' });
         }
 
         // 2. Find the full ChatRoom objects by IDs
-        const chatRooms = await ChatRoom.find({
-            _id: { $in: user.chats }
+        const chatrooms = await ChatRoom.find({
+            _id: { $in: user.chatrooms }
         });
 
-        return res.status(200).json(chatRooms);
+        return res.status(200).json(chatrooms);
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: 'Failed to fetch chat rooms.' });
@@ -49,7 +52,7 @@ const createChatRooms = async (req, res) => {
             // Add the new chat room to both users
             await User.updateMany(
                 { _id: { $in: members } },
-                { $push: { chats: newRoom._id } }
+                { $push: { chatrooms: newRoom._id } }
             );
 
             return res.status(201).json(newRoom);
@@ -57,7 +60,7 @@ const createChatRooms = async (req, res) => {
 
         // Group chat creation
         if (!userIds || userIds.length > 1) {
-            const members = [currentUserId, ...(userIds || [])];
+            const members = [...new Set([currentUserId, ...(userIds || [])])];
             const chatName = req.body.chatName || `Group_${Date.now()}`;
 
             const newRoom = await ChatRoom.create({
@@ -68,7 +71,7 @@ const createChatRooms = async (req, res) => {
 
             await User.updateMany(
                 { _id: { $in: members } },
-                { $push: { chats: newRoom._id } }
+                { $push: { chatrooms: newRoom._id } }
             );
 
             return res.status(201).json(newRoom);
@@ -83,15 +86,73 @@ const createChatRooms = async (req, res) => {
 
 
 const getChatRoom = async (req, res) => {
+    try {
+      const { id } = req.params;
 
-}
+      console.log(id)
+  
+      // Optionally verify ChatRoom exists
+      const chatRoom = await ChatRoom.findById(id);
+      if (!chatRoom) return res.status(404).json({ error: 'Chat room not found' });
+  
+      const messages = await Message.find({ chatRoomId: id }).populate('sender', 'username');
+  
+      return res.status(200).json({ messages });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+};
 
 const updateChatRoom = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { addMembers = [], removeMembers = [] } = req.body;
+  
+      const chatRoom = await ChatRoom.findById(id);
+      if (!chatRoom) return res.status(404).json({ error: 'Chat room not found' });
+  
+      // Add members (only if not already in the room)
+      addMembers.forEach((memberId) => {
+        if (!chatRoom.members.includes(memberId)) {
+          chatRoom.members.push(memberId);
+        }
+      });
+  
+      // Remove members
+      chatRoom.members = chatRoom.members.filter(
+        (memberId) => !removeMembers.includes(memberId.toString())
+      );
+  
+      await chatRoom.save();
+  
+      return res.status(200).json({ message: 'Chat room updated', chatRoom });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to update chat room' });
+    }
+  };
+  
 
-}
-
-const deleteChatRoom = async (req, res) => {
-
-}
+  const deleteChatRoom = async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      const chatRoom = await ChatRoom.findById(id);
+      if (!chatRoom) return res.status(404).json({ error: 'Chat room not found' });
+  
+      // Delete all messages associated with this chatRoom
+      await Message.deleteMany({ chatRoomId: id });
+  
+      // Delete the chat room
+      await ChatRoom.findByIdAndDelete(id);
+  
+      return res.status(200).json({ message: 'Chat room and messages deleted' });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to delete chat room' });
+    }
+  };
+  
 
 export { getChatRooms, createChatRooms, getChatRoom, updateChatRoom, deleteChatRoom}

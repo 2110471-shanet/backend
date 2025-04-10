@@ -4,8 +4,8 @@ const router = express.Router()
 
 router.get('/', getChatRooms)
 router.post('/', createChatRooms)
-// router.get('/chatrooms/:id',)
-// router.put('/chatrooms/:id',)
-// router.delete('/chatrooms/:id',)
+router.get('/:id', getChatRoom)
+router.put('/:id', updateChatRoom)
+router.delete('/:id', deleteChatRoom)
 
 export default router;

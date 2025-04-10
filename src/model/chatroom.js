@@ -2,23 +2,28 @@ import mongoose from 'mongoose';
 
 const chatRoomSchema = new mongoose.Schema({
     chatName: {
-        required: true,
         type: String,
+        required: true,
         unique: true,
     },
-    members: {
-        type: [String],
-        required: true
-    },
+    members: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    }],
     numMembers: {
         type: Number,
-        required: true
+        required: true,
+    },
+    lastMessage: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Message',
     }
 }, {
     timestamps: true
 });
 
-// Optional: Automatically update numMembers based on members array
+// Automatically update numMembers based on members array
 chatRoomSchema.pre('save', function (next) {
     this.numMembers = this.members.length;
     next();
