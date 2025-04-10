@@ -1,6 +1,6 @@
-# ByeOhEenForeMayTick
+# SHANET
 
-## Term Project: Genetic Chat App (Back-end Service)
+## Term Project: Shanet Chat App (Back-end Service)
 
 ...
 
@@ -11,3 +11,5 @@
 - ชนาธิป กุลสิริลักษณ์
 
 - ธนภัทร มโนอิ่ม
+
+- เป็นเอก สิทธิมงคล
