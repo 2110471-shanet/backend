@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const chatRoomSchema = new mongoose.Schema({
+    chatName: {
+        required: true,
+        type: String,
+        unique: true,
+    },
     members: {
         type: [String],
         required: true
