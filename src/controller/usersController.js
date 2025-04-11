@@ -4,7 +4,7 @@ const getUsers = async (req, res) => {
     try {
         const currentUserId = req.user._id; // assuming req.user is set by auth middleware
 
-        const users = await User.find({ _id: { $ne: currentUserId } }).select('id username');
+        const users = await User.find({ _id: { $ne: currentUserId } }).select('id username status');
         
         return res.status(200).json(users);
     } catch (err) {

@@ -14,6 +14,12 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Chat',
     }],
+    status: {
+        type: String,
+        enum: ['online', 'offline'], // ✅ restrict to these two
+        default: 'offline', // optional default
+        required: true,
+    }
 }, {
     timestamps: true,
 })
