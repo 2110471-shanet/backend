@@ -8,7 +8,9 @@ import apiRoute from './router/api.routes.js';
 import socketHandler from './socket.js';
 import authMiddleware from './authMiddleware.js';
 import chatroomsRoute from './router/chatrooms.routes.js';
-import messagesRoute from './router/messages.routes.js'
+import messagesRoute from './router/messages.routes.js';
+import userRoute from './router/user.routes.js';
+import usersRoute from './router/users.routes.js'
 
 const createApp = () => {
   const app = express();
@@ -25,6 +27,8 @@ const createApp = () => {
 
   app.use('/auth', authenticationRoute);
   app.use('/api', authMiddleware, apiRoute);
+  app.use('/api/user', authMiddleware, userRoute);
+  app.use('/api/users', authMiddleware, usersRoute);
   app.use('/api/chatrooms', authMiddleware, chatroomsRoute);
   app.use('/api/messages', authMiddleware, messagesRoute);
 
