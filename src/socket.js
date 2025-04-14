@@ -12,7 +12,7 @@ const socketHandler = (server) => {
     });
 
     io.on('connection', (socket) => {
-        socketController(io, socket); // 👈 ส่ง socket และ io เข้า controller
+        socketController(socket);
     });
 };
 export default socketHandler;
