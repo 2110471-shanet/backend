@@ -1,5 +1,5 @@
 {
-  "name": "backend-service",
+  "name": "backende",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
@@ -22,10 +22,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.1",
     "mongoose-sequence": "^6.0.1",
-    "openai": "^4.71.1",
     "pg": "^8.13.0",
     "socket.io": "^4.8.1",
-    "socketio": "^1.0.0",
     "validator": "^13.12.0"
   }
 }
