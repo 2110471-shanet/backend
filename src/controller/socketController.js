@@ -7,9 +7,8 @@ socket.on('join', async ({ username }) => {
     try {
         const user = await User.findOneAndUpdate(
             { username },
-            { isActive: true },
-            { new: true }
-        ).populate('chats');
+            { status: "online" }
+        ).populate('chatrooms');
 
         if (!user) return;
 
