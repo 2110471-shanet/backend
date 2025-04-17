@@ -3,6 +3,7 @@ import Chat from '../model/message.js';
 import ChatRoom from '../model/chatroom.js';
 import mongoose from 'mongoose';
 import Message from '../model/message.js';
+import DirectMessage from '../model/directmessage.js';
 
 const socketController = (socket, io) => {
     console.log(`user is connected ${socket.user.username}`) ;
@@ -14,15 +15,34 @@ const socketController = (socket, io) => {
     socket.broadcast.emit('active', socket.user, 'online') ;
 
     socket.on('join-rooms', (rooms) => {
-        console.log('start joining rooms') ;
+        socket.join(socket.user._id.toString()) ;
         for (const room of rooms) {
-            console.log(`${room._id} joined`) ;
             socket.join(room._id) ;
         }
     });
 
+    socket.on('send-direct-message', async (message, chatId, sendMessageCallback) => {
+        socket.to(chatId).emit('receive-direct-message', message, socket.user) ;
+
+        // actually achieves the message
+        const newMessage = new DirectMessage({
+            message: message,
+            senderId: socket.user._id,
+            receiverId: chatId,
+        })
+
+        await newMessage.save() ;
+        await ChatRoom.findByIdAndUpdate(chatId, {
+            lastMessage: newMessage._id,
+        });
+
+        // for debugging purposes
+        // console.log(`the message: ${message} is sent to chatroom: ${chatId}`)
+        sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
+    });
+
     socket.on('send-message', async (message, chatId, sendMessageCallback) => {
-        socket.to(chatId).emit('receive-message', message, socket.user.username, chatroomId, (isRead) => {
+        socket.to(chatId).emit('receive-message', message, socket.user.username, chatId, (isRead) => {
             // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
         }) ;
 
@@ -30,7 +50,7 @@ const socketController = (socket, io) => {
         const newMessage = new Message({
             message: message,
             chatRoomId: chatId,
-            sender: senderId,
+            senderId: socket.user._id,
         })
 
         await newMessage.save() ;
