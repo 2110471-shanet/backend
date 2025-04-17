@@ -11,14 +11,10 @@ const chatRoomSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     }],
-    numMembers: {
-        type: Number,
-        required: true,
-    },
-    isDirectChat: {
-        type: Boolean,
-        required: true,
-    },
+    // numMembers: {
+    //     type: Number,
+    //     required: true,
+    // },
     lastMessage: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Message',
@@ -28,10 +24,10 @@ const chatRoomSchema = new mongoose.Schema({
 });
 
 // Automatically update numMembers based on members array
-chatRoomSchema.pre('save', function (next) {
-    this.numMembers = this.members.length;
-    next();
-});
+// chatRoomSchema.pre('save', function (next) {
+//     this.numMembers = this.members.length;
+//     next();
+// });
 
 const ChatRoom = mongoose.model('ChatRoom', chatRoomSchema);
 
