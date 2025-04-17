@@ -13,23 +13,20 @@ const socketController = (socket, io) => {
 
     // maybe we want to join all rooms in user.chatrooms
 
-    socket.on('send-message', async (message, chatroomId, sendMessageCallback) => {
-        if (chatroomId === '')
-            socket.broadcast.emit('receive-message', message, socket.user.username) ;
-        else
-            socket.to(chatroomId).emit('receive-message', message, socket.user.username, chatroomId, (isRead) => {
-                // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
-            }) ;
+    socket.on('send-message', async (message, chatId, sendMessageCallback) => {
+        socket.to(chatId).emit('receive-message', message, socket.user.username, chatroomId, (isRead) => {
+            // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
+        }) ;
 
         // actually achieves the message
         const newMessage = new Message({
             message: message,
-            chatRoomId: chatroomId,
+            chatRoomId: chatId,
             sender: senderId,
         })
 
         await newMessage.save() ;
-        await ChatRoom.findByIdAndUpdate(chatroomId, {
+        await ChatRoom.findByIdAndUpdate(chatId, {
             lastMessage: newMessage._id,
         });
 
@@ -41,7 +38,7 @@ const socketController = (socket, io) => {
     // maybe we don't even need this
     socket.on('select-chatroom', (previousChatroomId, chatroomId) => {
         // chatroomId can be either userId or chatroomId
-        socket.leave(previousChatroomId) ; // maybe we don't need this
+        // socket.leave(previousChatroomId) ;
         socket.join(chatroomId) ;
     });
 
@@ -72,8 +69,10 @@ const socketController = (socket, io) => {
     });
 
     socket.on('typing', (username, chatroomId) => {
-        socket.to(chatroomId).emit('others-typing', username) ;
+        socket.to(chatroomId).emit('others-typing', username, chatroomId) ;
     });
+
+    socket.on()
 
     // for read
     socket.on('read-message', () => {
