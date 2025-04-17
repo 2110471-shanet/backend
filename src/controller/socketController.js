@@ -1,76 +1,121 @@
 import User from '../model/user.js';   
 import Chat from '../model/message.js';
+import ChatRoom from '../model/chatroom.js';
 import mongoose from 'mongoose';
+import Message from '../model/message.js';
 
 const socketController = (socket, io) => {
-socket.on('join', async ({ username }) => {
-    try {
-        const user = await User.findOneAndUpdate(
-            { username },
-            { status: "online" }
-        ).populate('chatrooms');
+    console.log(`user is connected ${socket.id}`) ;
 
-        if (!user) return;
+    // mock fetching
+    socket.emit('retrieve-users', socket.users) ;
+    socket.emit('retrieve-chatrooms', socket.chatrooms) ;
 
-        // Join all chat room topics
-        for (const chatId of user.chats) {
-            const chat = await Chat.findById(chatId).populate('chatRoomId');
-            if (chat?.chatRoomId?._id) {
-                const room = chat.chatRoomId._id.toString();
-                socket.join(room);
-            }
-        }
+    // maybe we want to join all rooms in user.chatrooms
 
-        console.log(`${username} joined rooms.`);
-    } catch (err) {
-        console.error('Join error:', err);
-    }
-});
+    socket.on('send-message', async (message, chatId, sendMessageCallback) => {
+        socket.to(chatId).emit('receive-message', message, socket.user.username, chatroomId, (isRead) => {
+            // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
+        }) ;
 
-socket.on('typing', ({ username, chatRoomId }) => {
-    socket.to(chatRoomId).emit('typing', { username });
-});
+        // actually achieves the message
+        const newMessage = new Message({
+            message: message,
+            chatRoomId: chatId,
+            sender: senderId,
+        })
 
-socket.on('send', async ({ username, chatRoomId, message, type = 'text' }) => {
-    try {
-        const newMessage = await Chat.create({
-            sender: username,
-            message,
-            type,
-            chatRoomId
+        await newMessage.save() ;
+        await ChatRoom.findByIdAndUpdate(chatId, {
+            lastMessage: newMessage._id,
         });
 
-        io.to(chatRoomId).emit('receive', {
-            sender: username,
-            message,
-            type,
-            chatRoomId,
-            createdAt: newMessage.createdAt
-        });
+        // for debugging purposes
+        console.log(`the message: ${message} is sent to chatroom: ${chatroomId}`)
+        sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatroomId}`) ;
+    });
 
-    } catch (err) {
-        console.error('Send error:', err);
-    }
-});
+    // maybe we don't even need this
+    socket.on('select-chatroom', (previousChatroomId, chatroomId) => {
+        // chatroomId can be either userId or chatroomId
+        // socket.leave(previousChatroomId) ;
+        socket.join(chatroomId) ;
+    });
 
-socket.on('disconnecting', async () => {
-    const rooms = Array.from(socket.rooms).filter(r => r !== socket.id);
-
-    for (const username in userSockets) {
-        if (userSockets[username] === socket.id) {
-            await User.findOneAndUpdate(
-                { username },
-                { isActive: false }
-            );
-            delete userSockets[username];
-            console.log(`${username} disconnected and left all rooms.`);
+    socket.on('join-chatroom', async (chatroomId, joinRoomCallback) => {
+        // check if user is already in chatroom
+        if (socket.user.chatrooms.some(chatroom => (chatroom.toString() === chatroomId.toString()))) {
+            socket.emit('errors', `user ${socket.user.username} is already in chatroom ${chatroomId}`) ;
+            return ;
         }
-    }
-});
 
-socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
-});
+        // maybe we should just socket.join() here
+        
+        // notify others in room
+        io.to(chatroomId).emit('notify-join', `${socket.user.username} has joined the chat`)
+        joinRoomCallback(`${socket.user.username} has joined the chat`) ;
+
+        // update user's chatrooms
+        await User.findByIdAndUpdate(
+            socket.user._id,
+            { $push: { chatrooms: chatroomId } },
+        );
+
+        // update chatroom's members
+        await ChatRoom.findByIdAndUpdate(
+            chatroomId,
+            { $push: { members: socket.user._id } },
+        )
+    });
+
+    socket.on('typing', (username, chatroomId) => {
+        socket.to(chatroomId).emit('others-typing', username, chatroomId) ;
+    });
+
+    socket.on()
+
+    // for read
+    socket.on('read-message', () => {
+        // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
+    }) ;
+
+    // for testing
+    socket.on('update-user', async (username, updateCallback) => {
+        socket.user = await User.findOneAndUpdate(
+            { username: username },
+            { status: 'online' },
+            { new: true }
+        );
+
+        if (!socket.user) {
+            socket.emit('errors', 'user not found') ;
+
+            return ;
+        }
+
+        const connectionInfo = `user is connected with\nsocket id: ${socket.id}\nuser id: ${socket.user._id}` ;
+        socket.users  = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
+        
+        updateCallback(connectionInfo, socket.users) ;
+    });
+
+    socket.on('user-disconnect', async () => {
+        console.log('user disconnected') ;
+        await User.findOneAndUpdate(
+            { _id: socket.user._id },
+            { status: 'offline' },
+        );
+    });
+
+    socket.on('disconnect', async () => {
+        console.log(`user disconnected`) ;
+
+        await User.findOneAndUpdate(
+            { _id: socket.user._id },
+            { status: 'offline' },
+        );
+    });
 }
+
 export default socketController;
 
