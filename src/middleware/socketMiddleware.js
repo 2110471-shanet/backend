@@ -3,27 +3,36 @@ import ChatRoom from "../model/chatroom.js";
 import User from "../model/user.js"
 
 const socketMiddleware = async (socket, next) => {
-    if (socket.handshake.auth.token) {
-        const user = await User.findOneAndUpdate(
-            { username: socket.handshake.auth.token },
-            { status: 'online' },
-            { new: true }
-        );
+    console.log("h") ;
+    console.log(socket.handshake.headers.cookie);
 
-        console.log(user) ;
+    const rawCookie = socket.handshake.headers.cookie ;
+    const cookies = Object.fromEntries(
+        rawCookie?.split('; ').map(cookie => cookie.split('=')) || []
+    );
 
-        if (!user)
-            next(new Error("User not found")) ;
+    const cookie = cookies['token'] ;
 
-        socket.user        = user ;
-        socket.users       = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
-        socket.chatrooms   = await ChatRoom.find().select("chatName") ;
-        socket.activeUsers = await User.find({ _id: { $ne: socket.user._id }, status: 'online' }).select('_id username') ;
+    if (!cookie)
+        next(new Error('Please send cookie')) ;
 
-        next() ;
-    } else {
-        next(new Error("Please send Token")) ;
-    }
+    const user = await User.findOneAndUpdate(
+        { username: socket.handshake.auth.token },
+        { status: 'online' },
+        { new: true }
+    );
+
+    console.log(user) ;
+
+    if (!user)
+        next(new Error("User not found")) ;
+
+    socket.user        = user ;
+    socket.users       = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
+    socket.chatrooms   = await ChatRoom.find().select("chatName") ;
+    socket.activeUsers = await User.find({ _id: { $ne: socket.user._id }, status: 'online' }).select('_id username') ;
+
+    next() ;
 
 }
 
