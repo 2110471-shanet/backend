@@ -11,7 +11,7 @@ const socketController = (socket, io) => {
     // socket.users       = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
     // socket.chatrooms   = await ChatRoom.find().select("chatName") ;
     
-    socket.broadcast.emit('active', socket.user._id, 'online') ;
+    socket.broadcast.emit('active', socket.user, 'online') ;
 
     socket.on('join-rooms', (rooms) => {
         console.log('start joining rooms') ;
@@ -50,6 +50,23 @@ const socketController = (socket, io) => {
         socket.join(chatroomId) ;
     });
 
+    socket.on('create-room', async (roomName) => {
+        const existedRoom = await ChatRoom.findOne({ chatName: roomName });
+        if (existedRoom) {
+            socket.emit('errors', `${roomName} is already exists`) ;
+            return ;
+        }
+
+        const newRoom = ChatRoom({
+            chatName: roomName,
+            members: [ socket.user._id ],
+        });
+
+        await newRoom.save() ;
+
+        io.emit('room-created', newRoom) ;
+    });
+
     socket.on('join-chatroom', async (chatroomId, joinRoomCallback) => {
         // check if user is already in chatroom
         if (socket.user.chatrooms.some(chatroom => (chatroom.toString() === chatroomId.toString()))) {
@@ -85,12 +102,10 @@ const socketController = (socket, io) => {
         // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
     }) ;
 
-    socket.on('notify-status', (status) => {
-        socket.broadcast.emit('active', socket.user._id, status) ;
-    });
-
     socket.on('disconnect', async () => {
         console.log(`user disconnected`) ;
+        
+        socket.broadcast.emit('active', socket.user, 'offline') ;
 
         await User.findOneAndUpdate(
             { _id: socket.user._id },
