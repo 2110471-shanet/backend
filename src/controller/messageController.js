@@ -116,5 +116,35 @@ const getDirectMessages = async (req, res) => {
 };
 
 
+const getGroupMessages = async (req, res) => {
+    try {
+      const currentUserId = req.user._id.toString();
+      const chatRoomId = req.params.chatRoomId;
+  
+      if (!chatRoomId) {
+        return res.status(400).json({ error: 'chatRoomId is required' });
+      }
+  
+      const messages = await Message.find({ chatRoomId })
+        .sort({ createdAt: 1 }) // optional: sort by time
+        .populate('senderId', 'username _id'); // show sender info
+  
+      // Rename senderId to sender
+      const formattedMessages = messages.map(msg => ({
+        _id: msg._id,
+        message: msg.message,
+        sender: msg.senderId, // populated user info
+        chatRoomId: msg.chatRoomId,
+        createdAt: msg.createdAt,
+        updatedAt: msg.updatedAt
+      }));
+  
+      return res.status(200).json(formattedMessages);
+    } catch (err) {
+      console.error('Fetch group messages error:', err);
+      return res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+  };  
 
-export {createMessage, updateMessage, deleteMessage, getDirectMessages}
+
+export {createMessage, updateMessage, deleteMessage, getDirectMessages, getGroupMessages}
