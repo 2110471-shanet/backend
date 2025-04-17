@@ -25,26 +25,26 @@ const socketController = (socket, io) => {
         socket.to(chatId).emit('receive-direct-message', message, socket.user) ;
 
         // actually achieves the message
-        const newMessage = new DirectMessage({
+        const newDirectMessage = new DirectMessage({
             message: message,
             senderId: socket.user._id,
             receiverId: chatId,
         })
 
-        await newMessage.save() ;
+        await newDirectMessage.save() ;
         await ChatRoom.findByIdAndUpdate(chatId, {
-            lastMessage: newMessage._id,
+            lastMessage: newDirectMessage._id,
         });
 
         // for debugging purposes
-        // console.log(`the message: ${message} is sent to chatroom: ${chatId}`)
         sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
     });
 
     socket.on('send-message', async (message, chatId, sendMessageCallback) => {
-        socket.to(chatId).emit('receive-message', message, socket.user.username, chatId, (isRead) => {
-            // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
-        }) ;
+        // socket.to(chatId).emit('receive-message', message, socket.user.username, chatId, (isRead) => {
+        //     // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
+        // }) ;
+        socket.to(chatId).emit('receive-message', message, socket.user, chatId) ;
 
         // actually achieves the message
         const newMessage = new Message({
@@ -59,8 +59,7 @@ const socketController = (socket, io) => {
         });
 
         // for debugging purposes
-        console.log(`the message: ${message} is sent to chatroom: ${chatroomId}`)
-        sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatroomId}`) ;
+        sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
     });
 
     // maybe we don't even need this
