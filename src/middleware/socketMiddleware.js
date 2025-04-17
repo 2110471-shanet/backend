@@ -1,11 +1,11 @@
 import { getUsers } from "../controller/usersController.js" ;
 import ChatRoom from "../model/chatroom.js";
+import jwt from 'jsonwebtoken';
 import User from "../model/user.js"
 
-const socketMiddleware = async (socket, next) => {
-    console.log("h") ;
-    console.log(socket.handshake.headers.cookie);
+const JWT_SECRET = process.env.JWT_SECRET;
 
+const socketMiddleware = async (socket, next) => {
     const rawCookie = socket.handshake.headers.cookie ;
     const cookies = Object.fromEntries(
         rawCookie?.split('; ').map(cookie => cookie.split('=')) || []
@@ -16,24 +16,32 @@ const socketMiddleware = async (socket, next) => {
     if (!cookie)
         next(new Error('Please send cookie')) ;
 
-    const user = await User.findOneAndUpdate(
-        { username: socket.handshake.auth.token },
-        { status: 'online' },
-        { new: true }
-    );
+    console.log(cookie) ;
 
-    console.log(user) ;
+    const decoded = jwt.verify(cookie, JWT_SECRET);
+
+    const user = await User.findByIdAndUpdate(
+        decoded.id,
+        { status: 'online' },
+        { new: true },
+    ).select('_id username status');
 
     if (!user)
-        next(new Error("User not found")) ;
+        next(new Error('User not found')) ;
 
-    socket.user        = user ;
-    socket.users       = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
-    socket.chatrooms   = await ChatRoom.find().select("chatName") ;
-    socket.activeUsers = await User.find({ _id: { $ne: socket.user._id }, status: 'online' }).select('_id username') ;
+    socket.user = user;
 
-    next() ;
+    console.log(socket.user) ;
 
+    next();
+
+    // if (!user)
+    //     next(new Error("User not found")) ;
+
+    // socket.user        = user ;
+    // socket.users       = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
+    // socket.chatrooms   = await ChatRoom.find().select("chatName") ;
+    // socket.activeUsers = await User.find({ _id: { $ne: socket.user._id }, status: 'online' }).select('_id username') ;
 }
 
 export default socketMiddleware ;

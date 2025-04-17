@@ -30,6 +30,17 @@ const getChatRooms = async (req, res) => {
     }
 };
 
+const getAllChatRooms = async (req, res) => {
+  try {
+      
+      const chatrooms = await ChatRoom.find() ;
+
+      return res.status(200).json(chatrooms);
+  } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to fetch chat rooms.' });
+  }
+};
 
 const createChatRooms = async (req, res) => {
     try {
@@ -158,4 +169,4 @@ const updateChatRoom = async (req, res) => {
   };
   
 
-export { getChatRooms, createChatRooms, getChatRoom, updateChatRoom, deleteChatRoom}
+export { getChatRooms, createChatRooms, getChatRoom, updateChatRoom, deleteChatRoom, getAllChatRooms }

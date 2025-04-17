@@ -72,7 +72,7 @@ const socketController = (socket, io) => {
         socket.to(chatroomId).emit('others-typing', username, chatroomId) ;
     });
 
-    socket.on()
+    // socket.on()
 
     // for read
     socket.on('read-message', () => {
