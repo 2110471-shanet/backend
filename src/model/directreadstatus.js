@@ -1,21 +1,21 @@
 import mongoose from 'mongoose';
 
-const readStatusSchema = new mongoose.Schema({
+const directReadStatusSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
     index: true,
   },
-  chatRoomId: {
+  anotherUserId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ChatRoom',
+    ref: 'User',
     required: true,
     index: true,
   },
   lastReadMessageId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Message',
+    ref: 'DirectMessage',
     default: null,
   },
   unreadCount: {
@@ -27,8 +27,8 @@ const readStatusSchema = new mongoose.Schema({
 });
 
 // Ensure one record per user per chatRoom
-readStatusSchema.index({ userId: 1, chatRoomId: 1 }, { unique: true });
+directReadStatusSchema.index({ userId: 1, anotherUserId: 1 }, { unique: true });
 
-const ReadStatus = mongoose.model('ReadStatus', readStatusSchema);
+const DirectReadStatus = mongoose.model('DirectReadStatus', directReadStatusSchema);
 
-export default ReadStatus;
+export default DirectReadStatus;
