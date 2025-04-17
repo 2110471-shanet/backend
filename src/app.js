@@ -6,7 +6,7 @@ import connect from './config/mongodb.js';
 import authenticationRoute from './router/authentication.routes.js';
 import apiRoute from './router/api.routes.js';
 import socketHandler from './socket.js';
-import authMiddleware from './authMiddleware.js';
+import authMiddleware from './middleware/authMiddleware.js';
 import chatroomsRoute from './router/chatrooms.routes.js';
 import messagesRoute from './router/messages.routes.js';
 import userRoute from './router/user.routes.js';
@@ -31,7 +31,6 @@ const createApp = () => {
   app.use('/api/users', authMiddleware, usersRoute);
   app.use('/api/chatrooms', authMiddleware, chatroomsRoute);
   app.use('/api/messages', authMiddleware, messagesRoute);
-
 
   return app;
 };
