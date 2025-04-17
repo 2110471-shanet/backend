@@ -5,23 +5,29 @@ import User from "../model/user.js"
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const socketMiddleware = async (socket, next) => {
-    const rawCookie = socket.handshake.headers.cookie ;
+const decodeCookie = (rawCookie, cookieName) => {
     const cookies = Object.fromEntries(
         rawCookie?.split('; ').map(cookie => cookie.split('=')) || []
     );
 
-    const cookie = cookies['token'] ;
-
+    const cookie = cookies[cookieName] ;
     if (!cookie)
-        next(new Error('Please send cookie')) ;
+        return null ;
 
-    console.log(cookie) ;
+    const decodedCookie = jwt.verify(cookie, JWT_SECRET);
+    if (!decodedCookie)
+        return null ;
+    
+    return decodedCookie ;
+}
 
-    const decoded = jwt.verify(cookie, JWT_SECRET);
+const socketMiddleware = async (socket, next) => {
+    const decodedCookie = decodeCookie(socket.handshake.headers.cookie, 'token') ;
+    if (!decodedCookie)
+        next(new Error('Cookie not found')) ;
 
     const user = await User.findByIdAndUpdate(
-        decoded.id,
+        decodedCookie.id,
         { status: 'online' },
         { new: true },
     ).select('_id username status');
@@ -31,7 +37,7 @@ const socketMiddleware = async (socket, next) => {
 
     socket.user = user;
 
-    console.log(socket.user) ;
+    // console.log(socket.user) ;
 
     next();
 

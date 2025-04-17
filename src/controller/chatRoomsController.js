@@ -55,9 +55,7 @@ const getAllChatRooms = async (req, res) => {
       return chatroomObj;
     });
 
-    res.status(200).json({
-      enrichedChatrooms
-    });
+    res.status(200).json(enrichedChatrooms);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to fetch chat rooms.' });
