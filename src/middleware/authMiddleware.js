@@ -1,7 +1,7 @@
 // src/middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
-import User from './model/user.js';
-import { logout } from './controller/authenticationController.js';
+import User from '../model/user.js';
+import { logout } from '../controller/authenticationController.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
