@@ -15,7 +15,7 @@ const directReadStatusSchema = new mongoose.Schema({
   },
   lastReadMessageId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Message',
+    ref: 'DirectMessage',
     default: null,
   },
   unreadCount: {
@@ -27,7 +27,7 @@ const directReadStatusSchema = new mongoose.Schema({
 });
 
 // Ensure one record per user per chatRoom
-readStatusSchema.index({ userId: 1, anotherUserId: 1 }, { unique: true });
+directReadStatusSchema.index({ userId: 1, anotherUserId: 1 }, { unique: true });
 
 const DirectReadStatus = mongoose.model('DirectReadStatus', directReadStatusSchema);
 

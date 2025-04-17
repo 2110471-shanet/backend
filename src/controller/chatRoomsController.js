@@ -1,72 +1,104 @@
 import User from "../model/user.js";
 import ChatRoom from "../model/chatroom.js";
 import Message from "../model/message.js";
+import ChatRoomReadStatus from "../model/chatroomreadstatus.js";
 
 const getAllChatRooms = async (req, res) => {
   try {
 
-    const chatrooms = await ChatRoom.find().select('members isDirectChat')
-      .populate({
-          path: 'members',
-          select: 'username status _id'
-      });
-
-    const directChats = [];
-    const groupChats = [];
-
-    for (const chatroom of chatrooms) {
-      if (chatroom.isDirectChat) {
-        directChats.push(chatroom);
-      } else {
-        groupChats.push(chatroom);
-      }
-    }
-
-    res.status(200).json({
-      users: directChats,
-      chatrooms: groupChats
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Failed to fetch chat rooms.' });
-  }
-};
-
-const getChatRooms = async (req, res) => {
-  try {
     const userId = req.user._id;
 
-    const user = await User.findById(userId)
-      .select('chatrooms')
-      .populate({
-        path: 'chatrooms',
-        select: 'members isDirectChat',
-        populate: {
+    // 1. Get chatrooms the user is a member of
+    const chatrooms = await ChatRoom.find()
+      .select('chatName members lastMessage')
+      .populate([
+        {
           path: 'members',
-          select: 'username status _id'
+          select: 'username _id status',
+        },
+        {
+          path: 'lastMessage',
+          select: 'text createdAt senderId',
+          populate: {
+            path: 'senderId',
+            select: 'username _id'
+          }
         }
-      });
+      ]);
 
-    const directChats = [];
-    const groupChats = [];
+    // 2. Get read status for this user
+    const readStatuses = await ChatRoomReadStatus.find({ userId })
+      .select('chatRoomId unreadCount')
+      .lean();
 
-    for (const chatroom of user.chatrooms) {
-      if (chatroom.isDirectChat) {
-        directChats.push(chatroom);
-      } else {
-        groupChats.push(chatroom);
-      }
-    }
+    // 3. Create map for fast lookup
+    const unreadMap = new Map();
+    readStatuses.forEach(status => {
+      unreadMap.set(status.chatRoomId.toString(), status.unreadCount);
+    });
+
+    // 4. Enrich chatrooms with unreadCount (default to 0)
+    const enrichedChatrooms = chatrooms.map(chatroom => {
+      const chatroomObj = chatroom.toObject();
+      const chatroomId = chatroom._id.toString();
+
+      // Use unreadCount from map or fallback to 0
+      const unreadCount = unreadMap.get(chatroomId)
+      chatroomObj.unreadCount = unreadCount || 0;
+
+      const isJoined = chatroom.members.some(member =>
+        member._id.toString() === userId.toString()
+      );
+      chatroomObj.isjoined = isJoined;
+
+
+      return chatroomObj;
+    });
 
     res.status(200).json({
-      users: directChats,
-      chatrooms: groupChats
+      enrichedChatrooms
     });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to fetch chat rooms.' });
   }
 };
+
+// const getChatRooms = async (req, res) => {
+//   try {
+//     const userId = req.user._id;
+
+//     const user = await User.findById(userId)
+//       .select('chatrooms')
+//       .populate({
+//         path: 'chatrooms',
+//         select: 'members isDirectChat',
+//         populate: {
+//           path: 'members',
+//           select: 'username status _id'
+//         }
+//       });
+
+//     const directChats = [];
+//     const groupChats = [];
+
+//     for (const chatroom of user.chatrooms) {
+//       if (chatroom.isDirectChat) {
+//         directChats.push(chatroom);
+//       } else {
+//         groupChats.push(chatroom);
+//       }
+//     }
+
+//     res.status(200).json({
+//       users: directChats,
+//       chatrooms: groupChats
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({ error: 'Failed to fetch chat rooms.' });
+//   }
+// };
 
 
 const createChatRooms = async (req, res) => {
@@ -198,4 +230,4 @@ const deleteChatRoom = async (req, res) => {
 };
 
 
-export { getChatRooms, createChatRooms, getChatRoom, updateChatRoom, deleteChatRoom, getAllChatRooms }
+export { createChatRooms, getChatRoom, updateChatRoom, deleteChatRoom, getAllChatRooms }

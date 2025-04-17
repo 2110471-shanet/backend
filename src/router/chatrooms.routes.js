@@ -1,9 +1,9 @@
 import express from "express";
-import { getChatRooms, getAllChatRooms, createChatRooms, getChatRoom, updateChatRoom, deleteChatRoom } from "../controller/chatRoomsController.js";
+import { getAllChatRooms, createChatRooms, getChatRoom, updateChatRoom, deleteChatRoom } from "../controller/chatRoomsController.js";
 const router = express.Router()
 
 router.get('/all', getAllChatRooms)
-router.get('/', getChatRooms)
+// router.get('/', getChatRooms)
 router.post('/', createChatRooms)
 router.get('/:id', getChatRoom)
 router.put('/:id', updateChatRoom)

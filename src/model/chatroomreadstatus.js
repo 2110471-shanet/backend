@@ -27,7 +27,7 @@ const chatRoomReadStatusSchema = new mongoose.Schema({
 });
 
 // Ensure one record per user per chatRoom
-readStatusSchema.index({ userId: 1, chatRoomId: 1 }, { unique: true });
+chatRoomReadStatusSchema.index({ userId: 1, chatRoomId: 1 }, { unique: true });
 
 const ChatRoomReadStatus = mongoose.model('ChatRoomReadStatus', chatRoomReadStatusSchema);
 
