@@ -15,6 +15,10 @@ const chatRoomSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    isDirectChat: {
+        type: Boolean,
+        required: true,
+    },
     lastMessage: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Message',

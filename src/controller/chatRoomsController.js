@@ -4,10 +4,13 @@ import Message from "../model/message.js";
 
 const getChatRooms = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         // 1. Get the user and their chatroom IDs
-        const user = await User.findById(userId).select('chatrooms');
+        const user = await User.findById(userId).select({path: 'chatrooms', populate: {
+          path: "members",
+          select: "username _id status"
+        }})
 
         console.log(user)
 
