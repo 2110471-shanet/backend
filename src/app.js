@@ -18,6 +18,7 @@ const createApp = () => {
     origin: ['http://127.0.0.1:3000', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST'],
+    allowedHeaders: ["Content-Type"]
   };
 
   app.use(cors(corsOption));
