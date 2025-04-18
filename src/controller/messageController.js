@@ -128,8 +128,6 @@ const getGroupMessages = async (req, res) => {
       const messages = await Message.find({ chatRoomId })
         .sort({ createdAt: 1 }) // optional: sort by time
         .populate('senderId', 'username _id'); // show sender info
-
-        console.log(messages) ;
   
       // Rename senderId to sender
       const formattedMessages = messages.map(msg => ({

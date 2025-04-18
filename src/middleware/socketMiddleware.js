@@ -37,17 +37,7 @@ const socketMiddleware = async (socket, next) => {
 
     socket.user = user;
 
-    // console.log(socket.user) ;
-
     next();
-
-    // if (!user)
-    //     next(new Error("User not found")) ;
-
-    // socket.user        = user ;
-    // socket.users       = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
-    // socket.chatrooms   = await ChatRoom.find().select("chatName") ;
-    // socket.activeUsers = await User.find({ _id: { $ne: socket.user._id }, status: 'online' }).select('_id username') ;
 }
 
 export default socketMiddleware ;
