@@ -5,13 +5,21 @@ import mongoose from 'mongoose';
 import Message from '../model/message.js';
 
 const socketController = (socket, io) => {
-    console.log(`user is connected ${socket.id}`) ;
-
-    // mock fetching
-    socket.emit('retrieve-users', socket.users) ;
-    socket.emit('retrieve-chatrooms', socket.chatrooms) ;
+    console.log(`user is connected ${socket.user.username}`) ;
 
     // maybe we want to join all rooms in user.chatrooms
+    // socket.users       = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
+    // socket.chatrooms   = await ChatRoom.find().select("chatName") ;
+    
+    socket.broadcast.emit('active', socket.user, 'online') ;
+
+    socket.on('join-rooms', (rooms) => {
+        console.log('start joining rooms') ;
+        for (const room of rooms) {
+            console.log(`${room._id} joined`) ;
+            socket.join(room._id) ;
+        }
+    });
 
     socket.on('send-message', async (message, chatId, sendMessageCallback) => {
         socket.to(chatId).emit('receive-message', message, socket.user.username, chatroomId, (isRead) => {
@@ -40,6 +48,23 @@ const socketController = (socket, io) => {
         // chatroomId can be either userId or chatroomId
         // socket.leave(previousChatroomId) ;
         socket.join(chatroomId) ;
+    });
+
+    socket.on('create-room', async (roomName) => {
+        const existedRoom = await ChatRoom.findOne({ chatName: roomName });
+        if (existedRoom) {
+            socket.emit('errors', `${roomName} is already exists`) ;
+            return ;
+        }
+
+        const newRoom = ChatRoom({
+            chatName: roomName,
+            members: [ socket.user._id ],
+        });
+
+        await newRoom.save() ;
+
+        io.emit('room-created', newRoom) ;
     });
 
     socket.on('join-chatroom', async (chatroomId, joinRoomCallback) => {
@@ -72,43 +97,15 @@ const socketController = (socket, io) => {
         socket.to(chatroomId).emit('others-typing', username, chatroomId) ;
     });
 
-    socket.on()
-
     // for read
     socket.on('read-message', () => {
         // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
     }) ;
 
-    // for testing
-    socket.on('update-user', async (username, updateCallback) => {
-        socket.user = await User.findOneAndUpdate(
-            { username: username },
-            { status: 'online' },
-            { new: true }
-        );
-
-        if (!socket.user) {
-            socket.emit('errors', 'user not found') ;
-
-            return ;
-        }
-
-        const connectionInfo = `user is connected with\nsocket id: ${socket.id}\nuser id: ${socket.user._id}` ;
-        socket.users  = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
-        
-        updateCallback(connectionInfo, socket.users) ;
-    });
-
-    socket.on('user-disconnect', async () => {
-        console.log('user disconnected') ;
-        await User.findOneAndUpdate(
-            { _id: socket.user._id },
-            { status: 'offline' },
-        );
-    });
-
     socket.on('disconnect', async () => {
         console.log(`user disconnected`) ;
+        
+        socket.broadcast.emit('active', socket.user, 'offline') ;
 
         await User.findOneAndUpdate(
             { _id: socket.user._id },

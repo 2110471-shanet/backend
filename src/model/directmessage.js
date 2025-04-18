@@ -1,16 +1,16 @@
 import mongoose from 'mongoose';
 
-const messageSchema = new mongoose.Schema({
+const directMessageSchema = new mongoose.Schema({
   message: {
     type: mongoose.Schema.Types.Mixed,
     required: true,
   },
-  chatRoomId: {
+  senderId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ChatRoom',
+    ref: 'User',
     required: true,
   },
-  senderId: {
+  receiverId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
@@ -19,6 +19,6 @@ const messageSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-const Message = mongoose.model('Message', messageSchema);
+const DirectMessage = mongoose.model('DirectMessage', directMessageSchema);
 
-export default Message;
+export default DirectMessage;

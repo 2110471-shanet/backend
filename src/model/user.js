@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
     },
     chatrooms: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Chat',
+        ref: 'ChatRoom',
     }],
     status: {
         type: String,
