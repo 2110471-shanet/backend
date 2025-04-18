@@ -19,7 +19,7 @@ const socketController = async (socket, io) => {
     
     socket.on('send-direct-message', async (message, chatId, sendMessageCallback) => {
         socket.to(chatId).emit('receive-direct-message', message, socket.user) ;
-        socket.emit('receive-direct-message', message, socket.user) ;
+        io.to(socket.user._id.toString()).emit('receive-direct-message', message, socket.user) ;
         
         // actually achieves the message
         const newDirectMessage = new DirectMessage({
@@ -43,7 +43,7 @@ const socketController = async (socket, io) => {
             // }) ;
             
             socket.to(chatId).emit('receive-message', message, socket.user, chatId) ;
-            socket.emit('receive-message', message, socket.user, socket.user._id.toString()) ;
+            io.to(socket.user._id.toString()).emit('receive-message', message, socket.user, socket.user._id.toString()) ;
             
             // actually achieves the message
             const newMessage = new Message({
