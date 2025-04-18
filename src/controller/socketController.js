@@ -3,6 +3,7 @@ import Chat from '../model/message.js';
 import ChatRoom from '../model/chatroom.js';
 import mongoose from 'mongoose';
 import Message from '../model/message.js';
+import DirectMessage from '../model/directmessage.js';
 
 const socketController = (socket, io) => {
     console.log(`user is connected ${socket.user.username}`) ;
@@ -14,23 +15,42 @@ const socketController = (socket, io) => {
     socket.broadcast.emit('active', socket.user, 'online') ;
 
     socket.on('join-rooms', (rooms) => {
-        console.log('start joining rooms') ;
+        socket.join(socket.user._id.toString()) ;
         for (const room of rooms) {
-            console.log(`${room._id} joined`) ;
             socket.join(room._id) ;
         }
     });
 
+    socket.on('send-direct-message', async (message, chatId, sendMessageCallback) => {
+        socket.to(chatId).emit('receive-direct-message', message, socket.user) ;
+
+        // actually achieves the message
+        const newDirectMessage = new DirectMessage({
+            message: message,
+            senderId: socket.user._id,
+            receiverId: chatId,
+        })
+
+        await newDirectMessage.save() ;
+        await ChatRoom.findByIdAndUpdate(chatId, {
+            lastMessage: newDirectMessage._id,
+        });
+
+        // for debugging purposes
+        sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
+    });
+
     socket.on('send-message', async (message, chatId, sendMessageCallback) => {
-        socket.to(chatId).emit('receive-message', message, socket.user.username, chatroomId, (isRead) => {
-            // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
-        }) ;
+        // socket.to(chatId).emit('receive-message', message, socket.user.username, chatId, (isRead) => {
+        //     // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
+        // }) ;
+        socket.to(chatId).emit('receive-message', message, socket.user, chatId) ;
 
         // actually achieves the message
         const newMessage = new Message({
             message: message,
             chatRoomId: chatId,
-            sender: senderId,
+            senderId: socket.user._id,
         })
 
         await newMessage.save() ;
@@ -39,8 +59,7 @@ const socketController = (socket, io) => {
         });
 
         // for debugging purposes
-        console.log(`the message: ${message} is sent to chatroom: ${chatroomId}`)
-        sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatroomId}`) ;
+        sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
     });
 
     // maybe we don't even need this
@@ -75,10 +94,13 @@ const socketController = (socket, io) => {
         }
 
         // maybe we should just socket.join() here
+        socket.join(chatroomId) ;
         
         // notify others in room
+        io.in(chatroomId).emit('user-joined-chatroom', socket.user, chatroomId) ;
         io.to(chatroomId).emit('notify-join', `${socket.user.username} has joined the chat`)
-        joinRoomCallback(`${socket.user.username} has joined the chat`) ;
+        // joinRoomCallback(`${socket.user.username} has joined the chat`) ;
+        joinRoomCallback(true) ;
 
         // update user's chatrooms
         await User.findByIdAndUpdate(

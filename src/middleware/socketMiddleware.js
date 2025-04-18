@@ -30,7 +30,7 @@ const socketMiddleware = async (socket, next) => {
         decodedCookie.id,
         { status: 'online' },
         { new: true },
-    ).select('_id username status');
+    ).select('_id username status chatrooms');
 
     if (!user)
         next(new Error('User not found')) ;
