@@ -8,7 +8,6 @@ const getAllChatRooms = async (req, res) => {
 
     const userId = req.user._id;
 
-    // 1. Get chatrooms the user is a member of
     const chatrooms = await ChatRoom.find()
       .select('chatName members lastMessage')
       .populate([
@@ -18,7 +17,7 @@ const getAllChatRooms = async (req, res) => {
         },
         {
           path: 'lastMessage',
-          select: 'text createdAt senderId',
+          select: 'message createdAt senderId',
           populate: {
             path: 'senderId',
             select: 'username _id'
@@ -26,33 +25,17 @@ const getAllChatRooms = async (req, res) => {
         }
       ]);
 
-    // 2. Get read status for this user
-    const readStatuses = await ChatRoomReadStatus.find({ userId })
-      .select('chatRoomId unreadCount')
-      .lean();
+    const readStatuses = await ChatRoomReadStatus.find({ userId: userId }).lean();
 
-    // 3. Create map for fast lookup
-    const unreadMap = new Map();
-    readStatuses.forEach(status => {
-      unreadMap.set(status.chatRoomId.toString(), status.unreadCount);
-    });
-
-    // 4. Enrich chatrooms with unreadCount (default to 0)
     const enrichedChatrooms = chatrooms.map(chatroom => {
-      const chatroomObj = chatroom.toObject();
-      const chatroomId = chatroom._id.toString();
+      const unreadCount = readStatuses.find(status => {
+        return status.chatRoomId.toString() === chatroom._id.toString();
+      });
 
-      // Use unreadCount from map or fallback to 0
-      const unreadCount = unreadMap.get(chatroomId)
-      chatroomObj.unreadCount = unreadCount || 0;
-
-      const isJoined = chatroom.members.some(member =>
-        member._id.toString() === userId.toString()
-      );
-      chatroomObj.isjoined = isJoined;
-
-
-      return chatroomObj;
+      return {
+        ...chatroom.toObject(), 
+        unreadCount: unreadCount ? unreadCount.unreadCount : 0,
+      }
     });
 
     res.status(200).json(enrichedChatrooms);
@@ -61,42 +44,6 @@ const getAllChatRooms = async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch chat rooms.' });
   }
 };
-
-// const getChatRooms = async (req, res) => {
-//   try {
-//     const userId = req.user._id;
-
-//     const user = await User.findById(userId)
-//       .select('chatrooms')
-//       .populate({
-//         path: 'chatrooms',
-//         select: 'members isDirectChat',
-//         populate: {
-//           path: 'members',
-//           select: 'username status _id'
-//         }
-//       });
-
-//     const directChats = [];
-//     const groupChats = [];
-
-//     for (const chatroom of user.chatrooms) {
-//       if (chatroom.isDirectChat) {
-//         directChats.push(chatroom);
-//       } else {
-//         groupChats.push(chatroom);
-//       }
-//     }
-
-//     res.status(200).json({
-//       users: directChats,
-//       chatrooms: groupChats
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({ error: 'Failed to fetch chat rooms.' });
-//   }
-// };
 
 const createChatRooms = async (req, res) => {
   try {
