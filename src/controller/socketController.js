@@ -73,14 +73,25 @@ const socketController = async (socket, io) => {
             lastMessage: newMessage._id,
         });
 
+
+        const chatRoom = await ChatRoom.findById(chatId).lean();
+
+        if (!chatRoom) throw new Error('Chat room not found');
+
+        const otherMembers = chatRoom.members.filter(
+        (memberId) => memberId.toString() !== userId.toString()
+        );
+
+        for (const memberId of otherMembers) {
         await ChatRoomReadStatus.updateOne(
-            { chatRoomId: chatId, userId: { $ne: senderId } },
+            { chatRoomId: chatId, userId: memberId },
             {
-              $inc: { unreadCount: 1 },
-              $set: { lastReadMessageId: newMessage._id }
+            $inc: { unreadCount: 1 },
+            $set: { lastReadMessageId: newMessage._id }
             },
             { upsert: true }
         );
+        }
         
         // for debugging purposes
         sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
