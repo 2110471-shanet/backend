@@ -27,7 +27,7 @@ const directReadStatusSchema = new mongoose.Schema({
 });
 
 // Ensure one record per user per chatRoom
-directReadStatusSchema.index({ userId: 1, anotherUserId: 1 }, { unique: true });
+directReadStatusSchema.index({ senderId: 1, receiverId: 1 }, { unique: true });
 
 const DirectReadStatus = mongoose.model('DirectReadStatus', directReadStatusSchema);
 

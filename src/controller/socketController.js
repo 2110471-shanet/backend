@@ -37,6 +37,7 @@ const socketController = async (socket, io) => {
         await DirectReadStatus.updateOne(
             { receiverId: chatId, senderId: userId },
             { $inc: { unreadCount: 1 } },
+            { upsert: true },
         );
 
         socket.to(chatId).emit('receive-direct-message', newDirectMessage, socket.user) ;
