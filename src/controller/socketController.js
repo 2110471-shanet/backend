@@ -40,8 +40,7 @@ const socketController = async (socket, io) => {
         await DirectReadStatus.updateOne(
             { anotherUserId: chatId, userId: userId },
             {
-              $inc: { unreadCount: 1 },
-              $set: { lastReadMessageId: newDirectMessage._id }
+              $inc: { unreadCount: 1 }
             },
             { upsert: true }
         );
@@ -86,8 +85,7 @@ const socketController = async (socket, io) => {
         await ChatRoomReadStatus.updateOne(
             { chatRoomId: chatId, userId: memberId },
             {
-            $inc: { unreadCount: 1 },
-            $set: { lastReadMessageId: newMessage._id }
+            $inc: { unreadCount: 1 }
             },
             { upsert: true }
         );
@@ -154,8 +152,34 @@ const socketController = async (socket, io) => {
     });
     
     // for read
-    socket.on('read-message', () => {
+    socket.on('read-message', async (chatId, messageId) => {
         // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
+        const userId = socket.user._id
+
+        await ChatRoomReadStatus.findOneAndUpdate(
+            { chatRoomId: chatId, userId: userId },
+            {
+              lastReadMessageId: messageId,
+              unreadCount: 0
+            },
+            { upsert: true }
+        );
+
+    }) ;
+
+    socket.on('read-direct-message', async (chatId, messageId) => {
+        // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
+        const userId = socket.user._id
+
+        await DirectReadStatus.findOneAndUpdate(
+            { anotherUserId: chatId, userId: userId },
+            {
+              lastReadMessageId: messageId,
+              unreadCount: 0
+            },
+            { upsert: true }
+        );
+
     }) ;
     
     socket.on('disconnect', async () => {
