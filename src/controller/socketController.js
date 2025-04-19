@@ -39,8 +39,8 @@ const socketController = async (socket, io) => {
             { $inc: { unreadCount: 1 } },
         );
 
-        socket.to(chatId).emit('receive-direct-message', message, socket.user) ;
-        io.to(userId.toString()).emit('receive-direct-message', message, socket.user) ;
+        socket.to(chatId).emit('receive-direct-message', newDirectMessage, socket.user) ;
+        io.to(userId.toString()).emit('receive-direct-message', newDirectMessage, socket.user) ;
         
         // for debugging purposes
         sendMessageCallback(`the message: ${message} is sent to user: ${chatId}`) ;
@@ -77,8 +77,8 @@ const socketController = async (socket, io) => {
             );
         }
 
-        socket.to(chatId).emit('receive-message', message, socket.user, chatId.toString()) ;
-        io.to(socket.user._id.toString()).emit('receive-message', message, socket.user, socket.user._id.toString()) ;
+        socket.to(chatId).emit('receive-message', newMessage, socket.user, chatId.toString()) ;
+        io.to(socket.user._id.toString()).emit('receive-message', newMessage, socket.user, socket.user._id.toString()) ;
         
         // for debugging purposes
         sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
@@ -201,10 +201,10 @@ const socketController = async (socket, io) => {
         const sockets = await io.fetchSockets();
         let connectionCount = 0;
         sockets.map(socketConnection => {
-            if (socketConnection.user._id === socketConnection.user._id) {
+            if (socketConnection.user._id === socket.user._id) {
                 connectionCount += 1;
             }
-        })
+        });
 
         if (connectionCount > 1) {
             return;
