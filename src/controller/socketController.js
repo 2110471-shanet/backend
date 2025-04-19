@@ -42,19 +42,19 @@ const socketController = async (socket, io) => {
             //     // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
             // }) ;
             
-            socket.to(chatId).emit('receive-message', message, socket.user, chatId) ;
-            io.to(socket.user._id.toString()).emit('receive-message', message, socket.user, socket.user._id.toString()) ;
-            
-            // actually achieves the message
-            const newMessage = new Message({
-                message: message,
-                chatRoomId: chatId,
-                senderId: socket.user._id,
-            })
-            
-            await newMessage.save() ;
-            await ChatRoom.findByIdAndUpdate(chatId, {
-                lastMessage: newMessage._id,
+        socket.to(chatId).emit('receive-message', message, socket.user, chatId) ;
+        io.to(socket.user._id.toString()).emit('receive-message', message, socket.user, socket.user._id.toString()) ;
+        
+        // actually achieves the message
+        const newMessage = new Message({
+            message: message,
+            chatRoomId: chatId,
+            senderId: socket.user._id,
+        })
+        
+        await newMessage.save() ;
+        await ChatRoom.findByIdAndUpdate(chatId, {
+            lastMessage: newMessage._id,
         });
         
         // for debugging purposes
@@ -69,8 +69,8 @@ const socketController = async (socket, io) => {
     });
     
     socket.on('create-room', async (roomName) => {
-        const existedRoom = await ChatRoom.findOne({ chatName: roomName });
-        if (existedRoom) {
+        const existingRoom = await ChatRoom.findOne({ chatName: roomName });
+        if (existingRoom) {
             socket.emit('errors', `${roomName} is already exists`) ;
             return ;
         }
@@ -109,6 +109,25 @@ const socketController = async (socket, io) => {
             chatroomId,
             { $push: { members: socket.user } },
         )
+    });
+
+    socket.on('change-username', async (newUsername) => {
+        const existingUser = await User.findOne({ username: newUsername });
+        if (existingUser) {
+            socket.emit('errors', `username ${newUsername} already existed`);
+            return;
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            socket.user._id,
+            { username: newUsername }
+        );
+        if (!updatedUser) {
+            socket.emit('errors', 'error trying to change username');
+            return;
+        }
+
+        io.emit('username-changed', socket.user._id, newUsername);
     });
     
     socket.on('typing', (username, chatroomId) => {
