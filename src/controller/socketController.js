@@ -4,6 +4,8 @@ import ChatRoom from '../model/chatroom.js';
 import mongoose from 'mongoose';
 import Message from '../model/message.js';
 import DirectMessage from '../model/directmessage.js';
+import DirectReadStatus from '../model/directreadstatus.js';
+import ChatRoomReadStatus from '../model/chatroomreadstatus.js';
 
 const socketController = async (socket, io) => {
     console.log(`user is connected ${socket.user.username}`) ;
@@ -20,11 +22,13 @@ const socketController = async (socket, io) => {
     socket.on('send-direct-message', async (message, chatId, sendMessageCallback) => {
         socket.to(chatId).emit('receive-direct-message', message, socket.user) ;
         io.to(socket.user._id.toString()).emit('receive-direct-message', message, socket.user) ;
+
+        const userId = socket.user._id;
         
         // actually achieves the message
         const newDirectMessage = new DirectMessage({
             message: message,
-            senderId: socket.user._id,
+            senderId: userId,
             receiverId: chatId,
         })
         
@@ -32,16 +36,24 @@ const socketController = async (socket, io) => {
         await ChatRoom.findByIdAndUpdate(chatId, {
             lastMessage: newDirectMessage._id,
         });
+
+        await DirectReadStatus.updateOne(
+            { anotherUserId: chatId, userId: userId },
+            {
+              $inc: { unreadCount: 1 },
+              $set: { lastReadMessageId: newDirectMessage._id }
+            },
+            { upsert: true }
+        );
+          
         
         // for debugging purposes
         sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
     });
     
     socket.on('send-message', async (message, chatId, sendMessageCallback) => {
-        // socket.to(chatId).emit('receive-message', message, socket.user.username, chatId, (isRead) => {
-            //     // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
-            // }) ;
-            
+        const userId = socket.user._id;
+
         socket.to(chatId).emit('receive-message', message, socket.user, chatId) ;
         io.to(socket.user._id.toString()).emit('receive-message', message, socket.user, socket.user._id.toString()) ;
         
@@ -49,13 +61,22 @@ const socketController = async (socket, io) => {
         const newMessage = new Message({
             message: message,
             chatRoomId: chatId,
-            senderId: socket.user._id,
+            senderId: userId,
         })
         
         await newMessage.save() ;
         await ChatRoom.findByIdAndUpdate(chatId, {
             lastMessage: newMessage._id,
         });
+
+        await ChatRoomReadStatus.updateOne(
+            { chatRoomId: chatId, userId: { $ne: senderId } },
+            {
+              $inc: { unreadCount: 1 },
+              $set: { lastReadMessageId: newMessage._id }
+            },
+            { upsert: true }
+        );
         
         // for debugging purposes
         sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
