@@ -20,9 +20,6 @@ const socketController = async (socket, io) => {
     });
     
     socket.on('send-direct-message', async (message, chatId, sendMessageCallback) => {
-        socket.to(chatId).emit('receive-direct-message', message, socket.user) ;
-        io.to(socket.user._id.toString()).emit('receive-direct-message', message, socket.user) ;
-
         const userId = socket.user._id;
         
         // actually achieves the message
@@ -38,23 +35,19 @@ const socketController = async (socket, io) => {
         });
 
         await DirectReadStatus.updateOne(
-            { anotherUserId: chatId, userId: userId },
-            {
-              $inc: { unreadCount: 1 }
-            },
-            { upsert: true }
+            { receiverId: chatId, senderId: userId },
+            { $inc: { unreadCount: 1 } },
         );
-          
+
+        socket.to(chatId).emit('receive-direct-message', message, socket.user) ;
+        io.to(userId.toString()).emit('receive-direct-message', message, socket.user) ;
         
         // for debugging purposes
-        sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
+        sendMessageCallback(`the message: ${message} is sent to user: ${chatId}`) ;
     });
     
     socket.on('send-message', async (message, chatId, sendMessageCallback) => {
         const userId = socket.user._id;
-
-        socket.to(chatId).emit('receive-message', message, socket.user, chatId) ;
-        io.to(socket.user._id.toString()).emit('receive-message', message, socket.user, socket.user._id.toString()) ;
         
         // actually achieves the message
         const newMessage = new Message({
@@ -68,34 +61,27 @@ const socketController = async (socket, io) => {
             lastMessage: newMessage._id,
         });
 
-
         const chatRoom = await ChatRoom.findById(chatId).lean();
 
         if (!chatRoom) throw new Error('Chat room not found');
 
         const otherMembers = chatRoom.members.filter(
-        (memberId) => memberId.toString() !== userId.toString()
+            (memberId) => memberId.toString() !== userId.toString()
         );
 
         for (const memberId of otherMembers) {
-        await ChatRoomReadStatus.updateOne(
-            { chatRoomId: chatId, userId: memberId },
-            {
-            $inc: { unreadCount: 1 }
-            },
-            { upsert: true }
-        );
+            await ChatRoomReadStatus.updateOne(
+                { chatRoomId: chatId, userId: memberId },
+                { $inc: { unreadCount: 1 } },
+                { upsert: true },
+            );
         }
+
+        socket.to(chatId).emit('receive-message', message, socket.user, chatId.toString()) ;
+        io.to(socket.user._id.toString()).emit('receive-message', message, socket.user, socket.user._id.toString()) ;
         
         // for debugging purposes
         sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
-    });
-    
-    // maybe we don't even need this
-    socket.on('select-chatroom', (previousChatroomId, chatroomId) => {
-        // chatroomId can be either userId or chatroomId
-        // socket.leave(previousChatroomId) ;
-        socket.join(chatroomId) ;
     });
     
     socket.on('create-room', async (roomName) => {
@@ -163,36 +149,50 @@ const socketController = async (socket, io) => {
     socket.on('typing', (username, chatroomId) => {
         socket.to(chatroomId).emit('others-typing', username, chatroomId) ;
     });
-    
-    // for read
-    socket.on('read-message', async (chatId, messageId) => {
-        // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
+
+    socket.on('read-direct-message', async (receiverId, senderId) => {
         const userId = socket.user._id
+
+        const latestDirectMessage = await DirectMessage.findOne({
+            $or: [
+                { senderId: senderId, receiverId: receiverId },
+                { senderId: receiverId, receiverId: senderId },
+            ]
+            })
+            .sort({ createdAt: -1 })
+            .limit(1)
+            .lean();
+
+        await DirectReadStatus.findOneAndUpdate(
+            { receiverId: receiverId, senderId: senderId },
+            {
+                lastReadMessageId: latestDirectMessage ? latestDirectMessage._id : null,
+                unreadCount: 0
+            },
+        );
+
+        io.to(userId.toString()).emit('direct-message-read', senderId); // who is being read
+    }) ;
+    
+    socket.on('read-message', async (chatId) => {
+        const userId = socket.user._id
+
+        const latestMessage = await Message.findOne({ chatRoomId: chatId })
+            .sort({ createdAt: -1 })
+            .limit(1)
+            .lean();
+
+        console.log(latestMessage);
 
         await ChatRoomReadStatus.findOneAndUpdate(
             { chatRoomId: chatId, userId: userId },
             {
-              lastReadMessageId: messageId,
+              lastReadMessageId: latestMessage ? latestMessage._id : null,
               unreadCount: 0
             },
-            { upsert: true }
         );
 
-    }) ;
-
-    socket.on('read-direct-message', async (chatId, messageId) => {
-        // do something with read logic (ask shane ขี้เกียจคิดแล้วว)
-        const userId = socket.user._id
-
-        await DirectReadStatus.findOneAndUpdate(
-            { anotherUserId: chatId, userId: userId },
-            {
-              lastReadMessageId: messageId,
-              unreadCount: 0
-            },
-            { upsert: true }
-        );
-
+        io.to(userId.toString()).emit('message-read', chatId.toString()); // who is being read
     }) ;
     
     socket.on('disconnect', async () => {

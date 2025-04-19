@@ -1,13 +1,13 @@
 import mongoose from 'mongoose';
 
 const directReadStatusSchema = new mongoose.Schema({
-  userId: {
+  senderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
     index: true,
   },
-  anotherUserId: {
+  receiverId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
