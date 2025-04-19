@@ -98,8 +98,6 @@ const socketController = async (socket, io) => {
         // notify others in room
         joinRoomCallback(true) ;
         io.to(chatroomId).emit('user-joined-chatroom', socket.user, chatroomId) ;
-        // io.to(chatroomId).emit('notify-join', `${socket.user.username} has joined the chat`)
-        // joinRoomCallback(`${socket.user.username} has joined the chat`) ;
         
         // update user's chatrooms
         await User.findByIdAndUpdate(
