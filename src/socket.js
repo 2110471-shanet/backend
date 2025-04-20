@@ -5,7 +5,7 @@ import socketMiddleware from './middleware/socketMiddleware.js';
 const socketHandler = (server) => {
     const io = new Server(server, {
         cors: {
-            origin: 'http://34.87.27.80:3000',
+            origin: 'https://chat.shanet.space',
             methods: ["GET", "POST"],
             allowedHeaders: ["*"],
             credentials: true
