@@ -15,9 +15,9 @@ import usersRoute from './router/users.routes.js'
 const createApp = () => {
   const app = express();
   const corsOption = {
-    origin: ['http://127.0.0.1:3000', 'http://localhost:3000'],
+    origin: ['*'],
     credentials: true,
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
   };
 
   app.use(cors(corsOption));
