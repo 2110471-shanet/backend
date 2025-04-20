@@ -34,15 +34,15 @@ const socketController = async (socket, io) => {
             await ChatRoom.findByIdAndUpdate(chatId, {
                 lastMessage: newDirectMessage._id,
             });
-    
+
             await DirectReadStatus.updateOne(
                 { receiverId: chatId, senderId: userId },
                 { $inc: { unreadCount: 1 } },
                 { upsert: true },
             );
     
-            socket.to(chatId).emit('receive-direct-message', newDirectMessage, socket.user) ;
             io.to(userId.toString()).emit('receive-direct-message', newDirectMessage, socket.user) ;
+            socket.to(chatId).emit('receive-direct-message', newDirectMessage, socket.user) ;
             
             // for debugging purposes
             sendMessageCallback(`the message: ${message} is sent to user: ${chatId}`) ;
@@ -79,8 +79,8 @@ const socketController = async (socket, io) => {
                 );
             }
     
-            socket.to(chatId).emit('receive-message', newMessage, socket.user, chatId.toString()) ;
-            io.to(socket.user._id.toString()).emit('receive-message', newMessage, socket.user, socket.user._id.toString()) ;
+            io.to(socket.user._id.toString()).emit('receive-message', newMessage, socket.user, async () => {});
+            socket.to(chatId).emit('receive-message', newMessage, socket.user);
             
             // for debugging purposes
             sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
@@ -187,8 +187,6 @@ const socketController = async (socket, io) => {
                 .sort({ createdAt: -1 })
                 .limit(1)
                 .lean();
-    
-            console.log(latestMessage);
     
             await ChatRoomReadStatus.findOneAndUpdate(
                 { chatRoomId: chatId, userId: userId },
