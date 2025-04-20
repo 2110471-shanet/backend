@@ -1,30 +1,56 @@
-import { getUsers } from "../controller/usersController.js" ;
-import ChatRoom from "../model/chatroom.js";
+import jwt from 'jsonwebtoken';
 import User from "../model/user.js"
 
-const socketMiddleware = async (socket, next) => {
-    if (socket.handshake.auth.token) {
-        const user = await User.findOneAndUpdate(
-            { username: socket.handshake.auth.token },
-            { status: 'online' },
-            { new: true }
+const decodeCookie = (rawCookie, cookieName) => {
+    try {
+        const JWT_SECRET = process.env.JWT_SECRET;
+        if (!JWT_SECRET) {
+            throw new Error('JWT_SECRET is not defined');
+        }
+
+        const cookies = Object.fromEntries(
+            rawCookie?.split('; ').map(cookie => cookie.split('=')) || []
         );
 
-        console.log(user) ;
+        const cookie = cookies[cookieName] ;
+        if (!cookie)
+            return null ;
 
-        if (!user)
-            next(new Error("User not found")) ;
-
-        socket.user        = user ;
-        socket.users       = await User.find({ _id: { $ne: socket.user._id } }).select('_id username status') ;
-        socket.chatrooms   = await ChatRoom.find().select("chatName") ;
-        socket.activeUsers = await User.find({ _id: { $ne: socket.user._id }, status: 'online' }).select('_id username') ;
-
-        next() ;
-    } else {
-        next(new Error("Please send Token")) ;
+        const decodedCookie = jwt.verify(cookie, JWT_SECRET);
+        if (!decodedCookie)
+            return null ;
+        
+        return decodedCookie ;
+    } catch (err) {
+        console.log(`error trying to decode cookie`);
+        return null;
     }
+}
 
+const socketMiddleware = async (socket, next) => {
+    try {
+        const decodedCookie = decodeCookie(socket.handshake.headers.cookie, 'token') ;
+        if (!decodedCookie) {
+            return next(new Error('Cookie not found')) ;
+        }
+    
+        const user = await User.findByIdAndUpdate(
+            decodedCookie.id,
+            { status: 'online' },
+            { new: true },
+        ).select('_id username status chatrooms');
+    
+        if (!user)
+            return next(new Error('User not found')) ;
+    
+        socket.user = user;
+    
+        next();
+    } catch (err) {
+        console.error('Socket middleware error:', err);
+        return next(new Error('Internal server error'));
+        
+    }
 }
 
 export default socketMiddleware ;

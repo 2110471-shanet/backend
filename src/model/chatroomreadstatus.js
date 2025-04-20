@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const readStatusSchema = new mongoose.Schema({
+const chatRoomReadStatusSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -27,8 +27,8 @@ const readStatusSchema = new mongoose.Schema({
 });
 
 // Ensure one record per user per chatRoom
-readStatusSchema.index({ userId: 1, chatRoomId: 1 }, { unique: true });
+chatRoomReadStatusSchema.index({ userId: 1, chatRoomId: 1 }, { unique: true });
 
-const ReadStatus = mongoose.model('ReadStatus', readStatusSchema);
+const ChatRoomReadStatus = mongoose.model('ChatRoomReadStatus', chatRoomReadStatusSchema);
 
-export default ReadStatus;
+export default ChatRoomReadStatus;

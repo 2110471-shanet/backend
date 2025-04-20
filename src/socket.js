@@ -5,10 +5,11 @@ import socketMiddleware from './middleware/socketMiddleware.js';
 const socketHandler = (server) => {
     const io = new Server(server, {
         cors: {
-            origin: '*',
-            methods: ["GET", "POST"],
-            allowedHeaders: ["*"],
-            credentials: true
+            origin: ['http://127.0.0.1:3000', 'http://localhost:3000'],
+            credentials: true,
+        
+            methods: ['GET', 'POST', 'PUT', 'DELETE'],
+            allowedHeaders: ['Content-Type']
         },
     });
 
