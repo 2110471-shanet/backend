@@ -74,7 +74,7 @@ const login = async(req, res) => {
         res.cookie('token', token, {
             httpOnly: true, // Helps prevent XSS attacks
             secure: true, // Set to true if using HTTPS
-            maxAge: 3600000*24, // 24 hour
+            maxAge: 3600000*24*7, // 24 hour
             sameSite: 'None',   
         });
 
