@@ -97,6 +97,8 @@ const socketController = async (socket, io) => {
                 chatName: roomName,
                 members: [ socket.user ],
             });
+
+            socket.join(newRoom._id.toString());
             
             await newRoom.save() ;
             
@@ -109,7 +111,7 @@ const socketController = async (socket, io) => {
                 socket.emit('errors', `user ${socket.user.username} is already in chatroom ${chatroomId}`) ;
                 return ;
             }
-            
+
             // maybe we should just socket.join() here
             socket.join(chatroomId) ;
             
