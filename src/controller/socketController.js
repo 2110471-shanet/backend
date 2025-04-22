@@ -79,8 +79,7 @@ const socketController = async (socket, io) => {
                 );
             }
     
-            io.to(socket.user._id.toString()).emit('receive-message', newMessage, socket.user, async () => {});
-            socket.to(chatId).emit('receive-message', newMessage, socket.user);
+            io.to(chatId).emit('receive-message', newMessage, socket.user);
             
             // for debugging purposes
             sendMessageCallback(`the message: ${message} is sent to chatroom: ${chatId}`) ;
@@ -119,7 +118,11 @@ const socketController = async (socket, io) => {
                 }],
             }
 
-            io.emit('room-created', populatedRoom) ;
+            io.emit('room-created', populatedRoom, socket.user) ;
+        });
+
+        socket.on('also-join', roomId => {
+            socket.join(roomId.toString());
         });
         
         socket.on('join-chatroom', async (chatroomId) => {
