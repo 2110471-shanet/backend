@@ -133,7 +133,7 @@ const socketController = async (socket, io) => {
             socket.join(chatroomId) ;
             
             // notify others in room
-            io.to(chatroomId).emit('user-joined-chatroom', socket.user, chatroomId) ;
+            io.emit('user-joined-chatroom', socket.user, chatroomId) ;
             
             // update user's chatrooms
             await User.findByIdAndUpdate(
