@@ -107,7 +107,19 @@ const socketController = async (socket, io) => {
             
             socket.join(newRoom._id.toString());
             
-            io.emit('room-created', newRoom) ;
+            const populatedRoom = {
+                _id: newRoom._id,
+                chatName: newRoom.chatName,
+                lastMessage: null,
+                members: [{
+                    _id: socket.user._id,
+                    username: socket.user.username,
+                    status: socket.user.status,
+                    unreadCount: 0,
+                }],
+            }
+
+            io.emit('room-created', populatedRoom) ;
         });
         
         socket.on('join-chatroom', async (chatroomId) => {
