@@ -14,8 +14,8 @@ import usersRoute from './router/users.routes.js'
 const createApp = () => {
   const app = express();
   const corsOption = {
-    // origin: 'http://localhost:3000',
-    origin: 'https://chat.shanet.space',
+    origin: 'http://localhost:3000',
+    // origin: 'https://chat.shanet.space',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   };

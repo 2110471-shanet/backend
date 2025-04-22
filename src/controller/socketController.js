@@ -97,10 +97,10 @@ const socketController = async (socket, io) => {
                 chatName: roomName,
                 members: [ socket.user ],
             });
-
-            socket.join(newRoom._id.toString());
             
             await newRoom.save() ;
+            
+            socket.join(newRoom._id.toString());
             
             io.emit('room-created', newRoom) ;
         });
