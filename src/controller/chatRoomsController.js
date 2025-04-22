@@ -108,8 +108,6 @@ const getChatRoom = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log(id)
-
     // Optionally verify ChatRoom exists
     const chatRoom = await ChatRoom.findById(id);
     if (!chatRoom) return res.status(404).json({ error: 'Chat room not found' });

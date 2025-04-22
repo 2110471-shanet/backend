@@ -100,6 +100,8 @@ const socketController = async (socket, io) => {
             
             await newRoom.save() ;
             
+            socket.join(newRoom._id.toString());
+            
             io.emit('room-created', newRoom) ;
         });
         
@@ -109,7 +111,7 @@ const socketController = async (socket, io) => {
                 socket.emit('errors', `user ${socket.user.username} is already in chatroom ${chatroomId}`) ;
                 return ;
             }
-            
+
             // maybe we should just socket.join() here
             socket.join(chatroomId) ;
             
@@ -209,14 +211,14 @@ const socketController = async (socket, io) => {
             const sockets = await io.fetchSockets();
             let connectionCount = 0;
             sockets.map(socketConnection => {
-                if (socketConnection.user._id === socket.user._id) {
+                if (socketConnection.user._id.toString() === socket.user._id.toString()) {
                     connectionCount += 1;
                 }
             });
     
             socket.emit('others-stop-typing', socket.user.username);
     
-            if (connectionCount > 1) {
+            if (connectionCount > 0) {
                 return;
             }
     
