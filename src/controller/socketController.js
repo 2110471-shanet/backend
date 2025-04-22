@@ -95,10 +95,15 @@ const socketController = async (socket, io) => {
             
             const newRoom = ChatRoom({
                 chatName: roomName,
-                members: [ socket.user ],
+                members: [ socket.user._id ],
             });
             
             await newRoom.save() ;
+
+            await User.findByIdAndUpdate(
+                socket.user._id,
+                { $push: { chatrooms: newRoom._id } },
+            );
             
             socket.join(newRoom._id.toString());
             
