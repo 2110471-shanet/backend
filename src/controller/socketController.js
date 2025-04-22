@@ -122,7 +122,7 @@ const socketController = async (socket, io) => {
         });
 
         socket.on('also-join', roomId => {
-            socket.join(roomId);
+            socket.join(roomId.toString());
         });
         
         socket.on('join-chatroom', async (chatroomId) => {
