@@ -20,3 +20,10 @@
 2. Make sure port 8080 is avaliable and not used by any process
 3. Make sure you are in the right branch(development)
 4. Run `npm run dev`
+
+## .env format
+```
+PORT=
+JWT_SECRET=
+MONGO_URI=
+```
